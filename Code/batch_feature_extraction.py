@@ -1,7 +1,7 @@
 # Extracts the features, labels, and normalizes the development and evaluation split features.
 # NOTE: Change the dataset_dir and feat_label_dir path accordingly
 
-import cls_feature_class
+from Code import cls_feature_class
 
 process_str = 'dev'  # 'dev' or 'eval' will extract features for the respective set accordingly
 #  'dev, eval' will extract features of both sets together

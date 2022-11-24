@@ -1,17 +1,8 @@
-#
-# A wrapper script that trains the network. The training stops when the SELD error stops improving.
-#
-
 import os
 import sys
 import numpy as np
 import matplotlib.pyplot as plot
-import cls_feature_class
-import cls_data_generator
-from metrics import evaluation_metrics
-import keras_model
 from keras.models import load_model
-import parameter
 import time
 
 plot.switch_backend('agg')
