@@ -6,13 +6,19 @@ from keras.layers import BatchNormalization, GRU, Bidirectional, Conv2D, MaxPool
 from keras.models import Model
 from keras.optimizers import Adam
 import keras
-keras.backend.set_image_data_format('channels_first')
+
+
 
 
 def get_model(data_in, data_out, dropout_rate, nb_cnn2d_filt, pool_size,
                                 rnn_size, fnn_size, weights):
     # model definition
-    spec_start = Input(shape=(data_in[-3], data_in[-2], data_in[-1]))
+    # data_in shape is (16, 8, 128, 1024)
+    # on channels_first setting,
+    # batch_size, channels, image height and width  (in terms of image)
+    # batch_size, 2_nb_ch, seq_len, feat_len        (in terms of audio, melstrogram)
+    data_in = data_in_shape
+    spec_start = Input(shape=(tuple(data_in[1:])))
 
     # CNN
     spec_cnn = spec_start
@@ -22,10 +28,16 @@ def get_model(data_in, data_out, dropout_rate, nb_cnn2d_filt, pool_size,
         spec_cnn = Activation('relu')(spec_cnn)
         spec_cnn = MaxPooling2D(pool_size=(1, pool_size[i]))(spec_cnn)
         spec_cnn = Dropout(dropout_rate)(spec_cnn)
-    spec_cnn = Permute((2, 1, 3))(spec_cnn)
+    # before permute, shape of spec_cnn is [None, 64, 128, 4]
+    # channel은 8 -> 64,
+    # 주파수, data_in의 height, 128 유지,
+    # 시간축, data_in의 width, 1024 -> 4로 MaxPooling
+    spec_cnn = Permute((3, 2, 1))(spec_cnn)
 
     # RNN
+    # data_in[-2] : 주파수 축
     spec_rnn = Reshape((data_in[-2], -1))(spec_cnn)
+    # spec_rnn shape is [None, 128, 256]
     for nb_rnn_filt in rnn_size:
         spec_rnn = Bidirectional(
             GRU(nb_rnn_filt, activation='tanh', dropout=dropout_rate, recurrent_dropout=dropout_rate,
