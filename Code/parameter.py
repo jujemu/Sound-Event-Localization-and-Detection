@@ -9,7 +9,7 @@ def get_params(argv):
     print("SET: {}".format(argv))
     # ########### default parameters ##############
     params = dict(
-        quick_test=True,     # To do quick test. Trains/test on small subset of dataset, and # of epochs
+        quick_test=False,     # To do quick test. Trains/test on small subset of dataset, and # of epochs
 
         # INPUT PATH
         dataset_dir='./Development Datasets/',  # Base folder containing the foa/mic and metadata folders
@@ -19,8 +19,7 @@ def get_params(argv):
         model_dir='./models/',   # Dumps the trained models and training curves in this folder
         dcase_output=True,     # If true, dumps the results recording-wise in 'dcase_dir' path.
                                # Set this true after you have finalized your model, save the output, and submit
-        dcase_dir='./results/',  # Dumps the recording-wise network output in this folder
-        os.makedirs(dcase_dir, exist_ok=True)
+        dcase_dir='./results/',  # Dumps the recording-wise network output in this folder        
 
         # DATASET LOADING PARAMETERS
         mode='dev',         # 'dev' - development or 'eval' - evaluation dataset
@@ -38,9 +37,12 @@ def get_params(argv):
         nb_epochs=50,               # Train for maximum epochs
         epochs_per_fit=5,           # Number of epochs per fit
 
+        # ?
+        project_output=None
+
     )
     params['patience'] = int(0.1 * params['nb_epochs'])     # Stop training if patience is reached
-
+    os.makedirs(params['dcase_dir'], exist_ok=True)
     # ########### User defined parameters ##############
     if argv == '1':
         print("USING DEFAULT PARAMETERS\n")

@@ -321,7 +321,8 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    try:
-        sys.exit(main(sys.argv))
-    except (ValueError, IOError) as e:
-        sys.exit(e)
+    main(sys.argv)
+    # try:
+    #     sys.exit(main(sys.argv))
+    # except (ValueError, IOError) as e:
+    #     sys.exit(e)

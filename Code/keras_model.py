@@ -7,16 +7,14 @@ from keras.models import Model
 from keras.optimizers import Adam
 import keras
 
-
-
-
+# 'channel_first' has occured error
+# https://stackoverflow.com/questions/68036975/valueerror-shape-must-be-at-least-rank-3-but-is-rank-2-for-node-biasadd
+data_in_shape = None, 128, 1024, 8
 def get_model(data_in, data_out, dropout_rate, nb_cnn2d_filt, pool_size,
                                 rnn_size, fnn_size, weights):
-    # model definition
-    # data_in shape is (16, 8, 128, 1024)
-    # on channels_first setting,
-    # batch_size, channels, image height and width  (in terms of image)
-    # batch_size, 2_nb_ch, seq_len, feat_len        (in terms of audio, melstrogram)
+    # data_in shape is
+    # batch_size, seq_len, feat_len, 2_nb_ch
+    # None, 128, 1024, 8
     data_in = data_in_shape
     spec_start = Input(shape=(tuple(data_in[1:])))
 
@@ -32,11 +30,11 @@ def get_model(data_in, data_out, dropout_rate, nb_cnn2d_filt, pool_size,
     # channel은 8 -> 64,
     # 주파수, data_in의 height, 128 유지,
     # 시간축, data_in의 width, 1024 -> 4로 MaxPooling
-    spec_cnn = Permute((3, 2, 1))(spec_cnn)
+    # spec_cnn = Permute((3, 2, 1))(spec_cnn)
 
     # RNN
     # data_in[-2] : 주파수 축
-    spec_rnn = Reshape((data_in[-2], -1))(spec_cnn)
+    spec_rnn = Reshape((data_in[-3], -1))(spec_cnn)
     # spec_rnn shape is [None, 128, 256]
     for nb_rnn_filt in rnn_size:
         spec_rnn = Bidirectional(

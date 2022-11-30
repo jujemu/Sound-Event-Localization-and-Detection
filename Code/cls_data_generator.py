@@ -185,7 +185,7 @@ class DataGenerator(object):
 
                     # Split to sequences
                     feat = self._split_in_seqs(feat)
-                    feat = np.transpose(feat, (0, 3, 1, 2))
+                    # feat = np.transpose(feat, (0, 3, 1, 2))
                     label = self._split_in_seqs(label)
 
                     # Get azi/ele in radians
