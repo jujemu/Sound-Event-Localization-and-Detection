@@ -1,7 +1,3 @@
-#
-# The network architecture
-#
-
 from keras.layers import BatchNormalization, GRU, Bidirectional, Conv2D, MaxPooling2D, Input, TimeDistributed, Dense, Activation, Dropout, Reshape, Permute
 from keras.models import Model
 from keras.optimizers import Adam
