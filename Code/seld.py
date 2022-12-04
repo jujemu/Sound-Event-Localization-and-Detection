@@ -166,6 +166,7 @@ def main(argv):
                                       nb_cnn2d_filt=params['nb_cnn2d_filt'], pool_size=params['pool_size'],
                                       rnn_size=params['rnn_size'], fnn_size=params['fnn_size'],
                                       weights=params['loss_weights'])
+
         best_seld_metric = 99999
         best_epoch = -1
         patience_cnt = 0
