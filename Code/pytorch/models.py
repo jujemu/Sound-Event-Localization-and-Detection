@@ -4,9 +4,9 @@ import torch.nn as nn
 class Network(nn.Module):
     def __init__(self):
         super().__init__()
-        self.cnn_input_channels = 8
+        self.cnn_input_channels = 4
         self.cnn_output_channels = 64
-        self.rnn_seq_len = 128        
+        self.rnn_seq_len = 150        
 
         # CNN
         pool_sizes = 8, 8, 4
@@ -44,10 +44,10 @@ class Network(nn.Module):
     def forward(self, x):
         x = self.CNN(x)
         x = x.permute(0, 2, 1, 3)
-        x = x.reshape(x.size(0), self.rnn_seq_len, -1)
+        x = x.reshape(20, 150, -1)
         x = self.GRU(x)[0]
-        sed = TimeDistributed(self.SED_fc)(x)
-        doa = TimeDistributed(self.DOA_fc)(x)
+        sed = TimeDistributed(self.SED_fc)(x).reshape(1, 3000, -1)
+        doa = TimeDistributed(self.DOA_fc)(x).reshape(1, 3000, -1)
         return sed, doa
 
 

@@ -24,6 +24,7 @@ class Audio2Vector(Dataset):
         self.aud_arr = sorted(os.listdir(self.aud_dir))
         self.desc_dir = None if is_eval else os.path.join(dataset_dir, 'metadata_dev')
         self.desc_arr = sorted(os.listdir(self.desc_dir)) if self.desc_dir else None
+        self.is_eval = is_eval
         self.scaler = joblib.load(scaler_path) if scaler_path else None
 
         self._fs = 48000
@@ -53,7 +54,18 @@ class Audio2Vector(Dataset):
             'phone': 3,
             'speech': 5
         }
-        self.idx_to_classes = {str(val): key for key, val in self._cls2idx.items()}
+        self.idx_to_classes = {str(val): key for key, val in self.cls2idx.items()}
+
+        # for cross-validation,
+        # save train_idx, validation_idx in pickle file
+        if not os.path.isfile('./indices.pkl'):
+            indices = np.random.permutation(len(self.aud_arr))
+            val_size = indices.shape[0] // 5
+            train_idx = indices[val_size:]
+            val_idx = indices[:val_size]
+
+            joblib.dump(train_idx, './train_idx.pkl')
+            joblib.dump(val_idx, './val_idx.pkl')
 
     def __len__(self):
         return len(self.aud_arr)
@@ -66,7 +78,7 @@ class Audio2Vector(Dataset):
 
         if self.scaler:
             spectrogram = self.scaler.transform(np.abs(spectrogram))        
-        spectrogram = spectrogram.reshape(-1, 1024, 4)
+        spectrogram = spectrogram.reshape(-1, 1024, 4).transpose(2, 0, 1)
 
         if self.is_eval:
             return spectrogram
@@ -92,6 +104,8 @@ class Audio2Vector(Dataset):
             azi_label[start: end, self.cls2idx[cls]] = azi
             ele_label[start: end, self.cls2idx[cls]] = ele
 
+        azi_label *= np.pi / 180
+        ele_label *= np.pi / 50
         label = np.concatenate((sed_label, azi_label, ele_label), axis=1)
     
         return spectrogram, label
