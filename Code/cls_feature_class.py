@@ -225,7 +225,7 @@ class FeatureClass:
 
         # extraction starts
         print('Extracting spectrogram:')
-        print('\t\taud_dir {}\n\t\tdesc_dir {}\n\t\tfeat_dir {}'.format(
+        print('\t\taud_dir {}\n\t\tdesc_dir {}\n\t\tfeat_dir {}\n'.format(
             self._aud_dir, self._desc_dir, self._feat_dir))
 
         with tqdm(enumerate(os.listdir(self._aud_dir)), total=len(os.listdir(self._aud_dir)), desc='Extract ') as iterator:
@@ -234,6 +234,7 @@ class FeatureClass:
                 iterator.set_postfix_str(log)
                 wav_filename = '{}.wav'.format(file_name.split('.')[0])
                 self._extract_spectrogram_for_file(wav_filename)
+        print()
 
     def preprocess_features(self):
         # Setting up folders and filenames
@@ -265,7 +266,7 @@ class FeatureClass:
                     spec_scaler,
                     normalized_features_wts_file
                 )
-                print('Normalized_features_wts_file: {}. Saved.'.format(normalized_features_wts_file))
+                print('Normalized_features_wts_file: {}. Saved.\n'.format(normalized_features_wts_file))
 
         print('Normalizing feature files:')
         print('\t\tfeat_dir_norm {}'.format(self._feat_dir_norm))
@@ -282,7 +283,7 @@ class FeatureClass:
                 )
                 del feat_file
 
-        print('normalized files written to {}'.format(self._feat_dir_norm))
+        print('normalized files written to {}\n'.format(self._feat_dir_norm))
 
     # ------------------------------- EXTRACT LABELS AND PREPROCESS IT -------------------------------
     def extract_all_labels(self):

@@ -1,4 +1,4 @@
-from keras.layers import BatchNormalization, GRU, Bidirectional, Conv2D, MaxPooling2D, Input, TimeDistributed, Dense, Activation, Dropout, Reshape, Permute
+from keras.layers import BatchNormalization, GRU, Bidirectional, Conv2D, MaxPooling2D, Input, TimeDistributed, Dense, Activation, Dropout, Reshape
 from keras.models import Model
 from keras.optimizers import Adam
 import keras
@@ -16,7 +16,7 @@ def get_model(data_in, data_out, dropout_rate, nb_cnn2d_filt, pool_size,
 
     # CNN
     spec_cnn = spec_start
-    for i, convCnt in enumerate(pool_size):
+    for i, _ in enumerate(pool_size):
         spec_cnn = Conv2D(filters=nb_cnn2d_filt, kernel_size=(3, 3), padding='same')(spec_cnn)
         spec_cnn = BatchNormalization()(spec_cnn)
         spec_cnn = Activation('relu')(spec_cnn)

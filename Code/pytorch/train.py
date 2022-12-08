@@ -17,7 +17,7 @@ from models import Network
 # @click.command()
 # @click.option('--input', 'input_dir', help='Directory of wave files and metadata', required=True)
 def main(
-    input_dir='Development Datasets/',
+    input_dir='Development Datasets',
 ):  
     date_time = datetime.now().strftime("%Y-%m-%d_%H%M")
     weight_output = os.path.join('./checkpoint', date_time)

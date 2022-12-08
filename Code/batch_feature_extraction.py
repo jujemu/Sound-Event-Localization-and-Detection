@@ -7,8 +7,8 @@ process_str = 'dev'  # 'dev' or 'eval' will extract features for the respective 
 #  'dev, eval' will extract features of both sets together
 
 dataset_name = 'foa'  # 'foa' -ambisonic or 'mic' - microphone signals
-dataset_dir = './Development Datasets/'   # Base folder containing the foa/mic and metadata folders
-feat_label_dir = './feat_label/'  # Directory to dump extracted features and labels
+dataset_dir = r'.\Development Datasets'   # Base folder containing the foa/mic and metadata folders
+feat_label_dir = r'.\feat_label'  # Directory to dump extracted features and labels
 
 
 if 'dev' in process_str:
