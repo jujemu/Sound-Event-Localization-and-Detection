@@ -10,8 +10,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true,
-            "args": ["--input ./Development Datasets"]
+            "justMyCode": true
         }
     ]
 }
