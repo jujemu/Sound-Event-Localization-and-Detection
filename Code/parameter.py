@@ -34,7 +34,7 @@ def get_params(argv):
         rnn_size=[128, 128],        # RNN contents, length of list = number of layers, list value = number of nodes
         fnn_size=[128],             # FNN contents, length of list = number of layers, list value = number of nodes
         loss_weights=[1., 50.],     # [sed, doa] weight for scaling the DNN outputs
-        nb_epochs=50,               # Train for maximum epochs
+        nb_epochs=5,               # Train for maximum epochs
         epochs_per_fit=5,           # Number of epochs per fit
 
         # ?
