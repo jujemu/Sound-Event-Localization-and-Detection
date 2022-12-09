@@ -6,3 +6,4 @@ feat_label/
 models/
 results/
 *.pdf
+*.pkl
