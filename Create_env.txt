@@ -1,0 +1,5 @@
+conda update -n base -c defaults conda -y
+conda create -n test python=3.10 -y
+conda activate test
+conda install -c conda-forge numpy pandas matplotlib joblib tqdm click librosa scipy scikit-learn -y
+conda install -c conda-forge tensorflow -y
