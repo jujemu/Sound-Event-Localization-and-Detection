@@ -1,4 +1,3 @@
-from glob import glob
 import os
 
 import joblib
@@ -9,7 +8,7 @@ import scipy.io.wavfile as wav
 from tqdm import tqdm
 
 from sklearn import preprocessing
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 
 class Audio2Vector(Dataset):
@@ -69,7 +68,7 @@ class Audio2Vector(Dataset):
 
     def __len__(self):
         return len(self.aud_arr)
-    
+
     def __getitem__(self, index):
         # Audio to Feature vector
         aud_path = os.path.join(self.aud_dir, self.aud_arr[index])
@@ -90,7 +89,7 @@ class Audio2Vector(Dataset):
         # if audio has longer than 60s, cut its end to fit 60s
         desc = desc[desc.start_time <= 60.]
         desc.loc[:, 'end_time'] = desc.end_time.apply(lambda x: 60. if x>60. else x)
-    
+
         # convert second into frames
         desc.start_time = np.round(desc.start_time * 50).astype(np.uint32)
         desc.end_time = np.round(desc.end_time * 50).astype(np.uint32)

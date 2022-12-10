@@ -19,7 +19,7 @@ from models import Network
 # @click.option('--input', 'input_dir', help='Directory of wave files and metadata', required=True)
 def main(
     input_dir='./Development Datasets/',
-    model_weight_path='./checkpoint/2022-12-05_0158/00_model_weight.pkl'
+    model_weight_path=None
 ):  
     date_time = datetime.now().strftime("%Y-%m-%d_%H%M")
     weight_output_path = os.path.join('./checkpoint', date_time) + '/'
@@ -28,16 +28,19 @@ def main(
     # device = 'cpu'
     device = xm.xla_device()
 
+    # Model
     model = Network()
     model = model.to(device)
     if model_weight_path:
-        print(f'Model is loaded with {model_weight_path}\n')
+        print(f'Model is loaded with {model_weight_path}')
         model.load_state_dict(torch.load(model_weight_path))
 
+    # Dataset
     ds = Audio2Vector(input_dir, './foa_wts.pkl')
     train_idx = joblib.load('./train_idx.pkl')
     val_idx = joblib.load('./val_idx.pkl')
 
+    # Parameter
     num_cls = 11
     epochs = 100
     batch_size = 1
@@ -46,20 +49,28 @@ def main(
     best_loss = np.inf
     bad_learning_cnt = 0
 
+    # DataLoader
     train_loader = DataLoader(ds, batch_size, sampler=train_idx)
     val_loader = DataLoader(ds, batch_size, sampler=val_idx)
 
+    # Criterion & Optimizer
     sed_criterion = nn.MultiLabelSoftMarginLoss()
     doa_criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr)
 
-    print(f'Model weight is saved on {weight_output_path}')
+    # Scheduler
+    mode = 'min'
+    factor = 0.5
+    patience = 3
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode, factor, patience, verbose=True)
+
+    # print(f'Model weight is saved on {weight_output_path}')
     for epoch in range(1, epochs+1):
         mean_loss = 0.
         
         model.train()
         print(f'Epoch: {epoch}')
-        with tqdm(train_loader, total=len(train_loader), desc="Train ") as iterator:
+        with tqdm(train_loader, "Train ", len(train_loader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}') as iterator:
             for idx, (X, y) in enumerate(iterator, start=1):
                 X, y = X.to(device), y.to(device)
                 sed_y, doa_y = y[:, :, :num_cls], y[:, :, num_cls:]                                
@@ -81,23 +92,25 @@ def main(
         torch.save(model.state_dict(), weight_output)
         
         model.eval()
-        with tqdm(val_loader, total=len(val_loader), desc="Validation ") as iterator:
+        with tqdm(val_loader, "Validation ", len(val_loader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}') as iterator:
             mean_loss = 0.
             for idx, (X, y) in enumerate(iterator, start=1):
-                X, y = X.to(device), y.to(device)
-                sed_y, doa_y = y[:, :, :num_cls], y[:, :, num_cls:]                                
-
                 with torch.no_grad():
+                    X, y = X.to(device), y.to(device)
+                    sed_y, doa_y = y[:, :, :num_cls], y[:, :, num_cls:] 
+                    
                     sed_output, doa_output = model(X)
-                sed_loss = sed_criterion(sed_output, sed_y)
-                doa_loss = doa_criterion(doa_output, doa_y)
-                loss = sed_loss + doa_loss
+                    sed_loss = sed_criterion(sed_output, sed_y)
+                    doa_loss = doa_criterion(doa_output, doa_y)
+                    loss = sed_loss + doa_loss
 
-                acc = ((sed_output > 0.5) == sed_y).to('cpu', dtype=torch.float64).sum().item()
-                acc /= 3000*11
-                mean_loss += loss.item()
-                log = f'loss: {mean_loss/idx:.3f} sed accuracy: {acc*100:.2f}%' 
-                iterator.set_postfix_str(log)
+                    acc = ((sed_output > 0.5) == sed_y).cpu().sum().item()
+                    acc /= 3000*11
+                    mean_loss += loss.item()
+                    log = f'loss: {mean_loss/idx:.3f} sed accuracy: {acc*100:.2f}%' 
+                    iterator.set_postfix_str(log)
+            # Scheduler
+            scheduler.step(loss)
             
             # if validation loss is not decreased despite of learning,
             # stop train loop
