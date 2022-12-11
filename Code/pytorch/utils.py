@@ -2,6 +2,7 @@ import os
 
 import joblib
 import librosa
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.io.wavfile as wav
@@ -11,21 +12,31 @@ from sklearn import preprocessing
 from torch.utils.data import Dataset
 
 
+cls2idx = {
+    'clearthroat': 2,
+    'cough': 8,
+    'doorslam': 9,
+    'drawer': 1,
+    'keyboard': 6,
+    'keysDrop': 4,
+    'knock': 0,
+    'laughter': 10,
+    'pageturn': 7,
+    'phone': 3,
+    'speech': 5
+}
+
+
 class Audio2Vector(Dataset):
     def __init__(
         self,
-        dataset_dir,
-        scaler_path='./feat_label/foa_wts.pkl',
+        dataset_dir=None,
+        sample_path=None,
+        is_sample=False,
+        scaler_path='./foa_wts.pkl',
         is_eval=False
     ):
         super().__init__()
-        self.aud_dir = os.path.join(dataset_dir, 'foa_dev')
-        self.aud_arr = sorted(os.listdir(self.aud_dir))
-        self.desc_dir = None if is_eval else os.path.join(dataset_dir, 'metadata_dev')
-        self.desc_arr = sorted(os.listdir(self.desc_dir)) if self.desc_dir else None
-        self.is_eval = is_eval
-        self.scaler = joblib.load(scaler_path) if scaler_path else None
-
         self._fs = 48000
         self._hop_len_s = 0.02
         self._hop_len = int(self._fs * self._hop_len_s)
@@ -40,24 +51,15 @@ class Audio2Vector(Dataset):
         self._eps = np.spacing(np.float64(1e-16))
         self._nb_channels = 4
 
-        self.cls2idx = {
-            'clearthroat': 2,
-            'cough': 8,
-            'doorslam': 9,
-            'drawer': 1,
-            'keyboard': 6,
-            'keysDrop': 4,
-            'knock': 0,
-            'laughter': 10,
-            'pageturn': 7,
-            'phone': 3,
-            'speech': 5
-        }
+        self.cls2idx = cls2idx
         self.idx_to_classes = {str(val): key for key, val in self.cls2idx.items()}
+
+        self.is_eval = is_eval
+        self.scaler = joblib.load(scaler_path) if scaler_path else None
 
         # for cross-validation,
         # save train_idx, validation_idx in pickle file
-        if not os.path.isfile('./indices.pkl'):
+        if not os.path.isfile('./train_idx.pkl'):
             indices = np.random.permutation(len(self.aud_arr))
             val_size = indices.shape[0] // 5
             train_idx = indices[val_size:]
@@ -65,13 +67,23 @@ class Audio2Vector(Dataset):
 
             joblib.dump(train_idx, './train_idx.pkl')
             joblib.dump(val_idx, './val_idx.pkl')
+            
+        # Only one audio file is put in
+        if is_sample:
+            self.aud_path = sample_path
+            self.is_sample = is_sample
+            return
+        self.aud_dir = os.path.join(dataset_dir, 'foa_dev')
+        self.aud_arr = sorted(os.listdir(self.aud_dir))
+        self.desc_dir = None if is_eval else os.path.join(dataset_dir, 'metadata_dev')
+        self.desc_arr = sorted(os.listdir(self.desc_dir)) if self.desc_dir else None
 
     def __len__(self):
-        return len(self.aud_arr)
+        return 1 if self.is_sample else len(self.aud_arr)
 
     def __getitem__(self, index):
         # Audio to Feature vector
-        aud_path = os.path.join(self.aud_dir, self.aud_arr[index])
+        aud_path = self.aud_path if self.is_sample else os.path.join(self.aud_dir, self.aud_arr[index])
         aud = self._load_audio(aud_path)
         spectrogram = self._spectrogram(aud).reshape(self._max_frames, -1)
 
@@ -79,7 +91,7 @@ class Audio2Vector(Dataset):
             spectrogram = self.scaler.transform(np.abs(spectrogram))        
         spectrogram = spectrogram.reshape(-1, 1024, 4).transpose(2, 0, 1)
 
-        if self.is_eval:
+        if self.is_eval or self.is_sample:
             return spectrogram
 
         # label to (frame x classes) array
@@ -154,3 +166,49 @@ def get_scaler(scaler_path='./feat_label/foa_wts.pkl'):
             X = X[0] if isinstance(X, tuple) else X
             scaler.partial_fit(np.abs(X))
     joblib.dump(scaler, scaler_path)
+
+
+def get_cls2idx():
+    return cls2idx
+
+
+def plot_aud_cls(df_path, infer):
+    plt.style.use('seaborn-v0_8-whitegrid')
+    cls2idx = get_cls2idx()
+    # list sorted by index
+    cls_arr = sorted([(key, val) for key, val in cls2idx.items()], key=lambda x: x[1])
+    cls_arr = [item[0] for item in cls_arr]
+
+    # csv파일(label)을 시간대 별 클래스를 넘파이 배열로 만들어
+    # 이미지로 그립니다.
+    SIZE = (3000, 11*100)
+    df = preprocess_df(pd.read_csv(df_path))
+    aud_arr = np.zeros(SIZE)
+    for _, row in df.iterrows():
+        cls, start, end, ele, azi, _ = row
+        cls_index = cls2idx[cls]
+        aud_arr[start: end, cls_index*100:(cls_index+1)*100] = 1
+    
+    if infer.ndim >= 3:
+        infer = infer.squeeze()
+
+    infer_arr = np.zeros(SIZE)
+    for idx, _ in enumerate(cls2idx):
+        infer_arr[:, idx*100:(idx+1)*100] = np.expand_dims(infer[:, idx], 1)
+
+    _, ax = plt.subplots(2, 1, figsize=(10, 7))
+    ax[0].set_title('Label')
+    ax[0].imshow(aud_arr.T, cmap='gray')
+    ax[0].set_yticks(range(50, 1150, 100), cls_arr)
+    ax[1].set_title('Inference')
+    ax[1].imshow(infer_arr.T, cmap='gray')
+    ax[1].set_yticks(range(50, 1150, 100), cls_arr)
+    plt.show()
+
+
+def preprocess_df(df):
+    df = df[df.start_time <= 60.]
+    df.loc[:, 'end_time'] = df.end_time.apply(lambda x: 60. if x>60. else x)
+    df.start_time = np.round(df.start_time * 50).astype(np.uint32)
+    df.end_time = np.round(df.end_time * 50).astype(np.uint32)
+    return df

@@ -45,8 +45,10 @@ class Network(nn.Module):
         x = self.CNN(x)
         # for make tensor's shape (batch_size, 3000, 64, 4)
         x = x.permute(0, 2, 1, 3)
-        # (batch_size, 3000, 256)
-        x = x.reshape(x.size(0), x.size(1), -1)
+        # (20, 150, 256)
+        x = x.reshape(20, 150, -1)
+        # GRU(x)[0].shape is (20, 150, 300)
+        # 300 = self.rnn_seq_len * 2 (bidirectional)
         x = self.GRU(x)[0]
         sed = TimeDistributed(self.SED_fc)(x).reshape(1, 3000, -1)
         doa = TimeDistributed(self.DOA_fc)(x).reshape(1, 3000, -1)

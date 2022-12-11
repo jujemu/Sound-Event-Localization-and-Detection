@@ -94,6 +94,7 @@ def main(
         model.eval()
         with tqdm(val_loader, "Validation ", len(val_loader), bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}') as iterator:
             mean_loss = 0.
+            acc_mean = 0.
             for idx, (X, y) in enumerate(iterator, start=1):
                 with torch.no_grad():
                     X, y = X.to(device), y.to(device)
@@ -104,10 +105,9 @@ def main(
                     doa_loss = doa_criterion(doa_output, doa_y)
                     loss = sed_loss + doa_loss
 
-                    acc = ((sed_output > 0.5) == sed_y).cpu().sum().item()
-                    acc /= 3000*11
+                    mean_acc += ((sed_output > 0.5) == sed_y).cpu().sum().item() / 3000 / 11 * 100
                     mean_loss += loss.item()
-                    log = f'loss: {mean_loss/idx:.3f} sed accuracy: {acc*100:.2f}%' 
+                    log = f'loss: {mean_loss/idx:.3f} sed accuracy: {mean_acc/idx:.2f}%' 
                     iterator.set_postfix_str(log)
             # Scheduler
             scheduler.step(loss)
