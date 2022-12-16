@@ -36,11 +36,11 @@ class FeatureClass:
 
         self._fs = 48000
         self._hop_len_s = 0.02
-        self._hop_len = int(self._fs * self._hop_len_s)
-        self._frame_res = self._fs / float(self._hop_len)
-        self._nb_frames_1s = int(self._frame_res)
+        self._hop_len = int(self._fs * self._hop_len_s) # 960
+        self._frame_res = self._fs / float(self._hop_len) # 50
+        self._nb_frames_1s = int(self._frame_res) # 50
 
-        self._win_len = 2 * self._hop_len
+        self._win_len = 2 * self._hop_len # 1920
         self._nfft = self._next_greater_power_of_2(self._win_len)
 
         self._dataset = dataset
