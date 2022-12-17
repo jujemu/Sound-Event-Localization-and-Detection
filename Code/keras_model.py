@@ -1,7 +1,6 @@
 from keras.layers import BatchNormalization, GRU, Bidirectional, Conv2D, MaxPooling2D, Input, TimeDistributed, Dense, Activation, Dropout, Reshape
 from keras.models import Model
 from keras.optimizers import Adam
-import keras
 
 # 'channel_first' has occured error
 # https://stackoverflow.com/questions/68036975/valueerror-shape-must-be-at-least-rank-3-but-is-rank-2-for-node-biasadd

@@ -1,5 +1,21 @@
+# For conda
 conda update -n base -c defaults conda -y
 conda create -n test python=3.10 -y
-conda activate test
+conda activate capstone
 conda install -c conda-forge numpy pandas matplotlib joblib tqdm click librosa scipy scikit-learn -y
-conda install -c conda-forge tensorflow -y
+conda install -c conda-forge pytorch torchvision torchaudio -y
+
+# For python venv in windows OS, and not pytorch, but tensorflow
+# so need to check CUDA is installed
+# this virtual environment only have own python version
+python -m venv capstone
+capstone\Scripts\activate.bat
+pip install numpy pandas matplotlib joblib tqdm click librosa scipy scikit-learn tensorflow tensorflow-gpu
+
+# pytorch
+git clone https://github.com/jujemu/Sound-Event-Localization-and-Detection.git
+git checkout main
+
+# tensorflow
+git clone https://github.com/jujemu/Sound-Event-Localization-and-Detection.git
+git checkout windows
