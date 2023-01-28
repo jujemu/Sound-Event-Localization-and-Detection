@@ -4,7 +4,7 @@
 
 import os
 import numpy as np
-import cls_feature_class
+from Code import cls_feature_class
 from collections import deque
 import random
 
