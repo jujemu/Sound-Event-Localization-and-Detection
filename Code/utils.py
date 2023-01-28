@@ -9,8 +9,8 @@ import scipy.io.wavfile as wav
 from tqdm import tqdm
 
 from sklearn import preprocessing
-import torch.nn as nn
 from torch.utils.data import Dataset
+
 
 cls2idx = {
     'clearthroat': 2,
@@ -33,7 +33,7 @@ class Audio2Vector(Dataset):
         dataset_dir=None,
         sample_path=None,
         is_sample=False,
-        scaler_path='./audio_scaler.pkl',
+        scaler_path='./foa_wts.pkl',
         is_eval=False
     ):
         super().__init__()
@@ -55,18 +55,8 @@ class Audio2Vector(Dataset):
         self.idx_to_classes = {str(val): key for key, val in self.cls2idx.items()}
 
         self.is_eval = is_eval
-        self.is_sample = is_sample
         self.scaler = joblib.load(scaler_path) if scaler_path else None
-            
-        # Only one audio file is put in
-        if is_sample:
-            self.aud_path = sample_path            
-            return
-        self.aud_dir = os.path.join(dataset_dir, 'foa_dev')
-        self.aud_arr = sorted(os.listdir(self.aud_dir))
-        self.desc_dir = None if is_eval else os.path.join(dataset_dir, 'metadata_dev')
-        self.desc_arr = sorted(os.listdir(self.desc_dir)) if self.desc_dir else None
-        
+
         # for cross-validation,
         # save train_idx, validation_idx in pickle file
         if not os.path.isfile('./train_idx.pkl'):
@@ -77,6 +67,16 @@ class Audio2Vector(Dataset):
 
             joblib.dump(train_idx, './train_idx.pkl')
             joblib.dump(val_idx, './val_idx.pkl')
+            
+        # Only one audio file is put in
+        if is_sample:
+            self.aud_path = sample_path
+            self.is_sample = is_sample
+            return
+        self.aud_dir = os.path.join(dataset_dir, 'foa_dev')
+        self.aud_arr = sorted(os.listdir(self.aud_dir))
+        self.desc_dir = None if is_eval else os.path.join(dataset_dir, 'metadata_dev')
+        self.desc_arr = sorted(os.listdir(self.desc_dir)) if self.desc_dir else None
 
     def __len__(self):
         return 1 if self.is_sample else len(self.aud_arr)
@@ -166,29 +166,6 @@ def get_scaler(scaler_path='./feat_label/foa_wts.pkl'):
             X = X[0] if isinstance(X, tuple) else X
             scaler.partial_fit(np.abs(X))
     joblib.dump(scaler, scaler_path)
-
-
-class TimeDistributed(nn.Module):
-    def __init__(self, module, batch_first=True):
-        super().__init__()
-        self.module = module
-        self.batch_first = batch_first
-
-    def forward(self, x):
-        if len(x.size()) <= 2:
-            return self.module(x)
-
-        # Squash samples and timesteps into a single axis
-        x_reshape = x.contiguous().view(-1, x.size(-1))  # (samples * timesteps, input_size)
-
-        y = self.module(x_reshape)
-
-        # We have to reshape Y
-        if self.batch_first:
-            y = y.contiguous().view(x.size(0), -1, y.size(-1))  # (samples, timesteps, output_size)
-        else:
-            y = y.view(-1, x.size(1), y.size(-1))  # (timesteps, samples, output_size)
-        return y        
 
 
 def get_cls2idx():
